@@ -1,12 +1,14 @@
 import { defineConfig } from "@playwright/test";
 
+const previewURL = `http://127.0.0.1:4173${process.env.VITE_BASE_PATH || "/"}`;
+
 export default defineConfig({
   testDir: "./tests",
   fullyParallel: true,
   workers: 2,
   reporter: "list",
   use: {
-    baseURL: "http://127.0.0.1:4173",
+    baseURL: previewURL,
     launchOptions: {
       executablePath: process.env.CHROMIUM_PATH || "/usr/bin/chromium",
       args: ["--disable-dev-shm-usage"],
@@ -34,7 +36,7 @@ export default defineConfig({
   ],
   webServer: {
     command: "npm run preview -- --port 4173 --strictPort",
-    url: "http://127.0.0.1:4173",
+    url: previewURL,
     reuseExistingServer: !process.env.CI,
   },
 });

@@ -9,7 +9,7 @@ async function navigate(page: Page, label: string) {
 }
 
 test.beforeEach(async ({ page }) => {
-  await page.goto("/");
+  await page.goto("./");
 });
 
 test("ricerca nel testo delle comms e collegamento alla fonte corretta", async ({
@@ -28,7 +28,7 @@ test("ricerca nel testo delle comms e collegamento alla fonte corretta", async (
   ).toBeVisible();
   await expect(page.locator(".detail-source")).toHaveAttribute(
     "href",
-    "/reference/JATF-OM-R04_Short.pdf#page=13",
+    `${process.env.VITE_BASE_PATH || "/"}reference/JATF-OM-R04_Short.pdf#page=13`,
   );
 });
 
@@ -178,7 +178,7 @@ test("layout adattivo, guida e PDF disponibili senza errori applicativi", async 
       () => document.documentElement.scrollWidth <= window.innerWidth,
     ),
   ).toBe(true);
-  const pdf = await request.get("/reference/JATF-OM-R04_Short.pdf");
+  const pdf = await request.get("reference/JATF-OM-R04_Short.pdf");
   expect(pdf.ok()).toBe(true);
   expect((await pdf.body()).subarray(0, 4).toString()).toBe("%PDF");
   expect(errors).toEqual([]);

@@ -23,6 +23,19 @@ npm test
 
 Playwright avvia la preview della build sulla porta 4173 ed esegue test funzionali su desktop (1440 px), tablet (820 px) e mobile (390 px). Richiede Chromium: nell’ambiente cloud è presente `/usr/bin/chromium`. Su altre macchine impostare `CHROMIUM_PATH` al binario locale. Il report distingue ricerca e filtri, persistenza dei preferiti, allenamento, layout e disponibilità del PDF. Le schermate dei test cloud sono salvate in `/workspace/artifacts`.
 
+## Pubblicazione su GitHub Pages
+
+Il workflow `.github/workflows/pages.yml` pubblica solo su richiesta manuale. Nel repository GitHub, aprire **Settings → Pages** e scegliere **GitHub Actions** come Source. Poi aprire **Actions → Publish DCS Comms to GitHub Pages → Run workflow**, selezionare `main` e confermare. A esecuzione completata, il job `deploy` mostra il link del sito. Le modifiche successive si pubblicano rilanciando lo stesso workflow.
+
+Il workflow installa con `npm ci` e compila usando il percorso del repository. Il PDF, l’icona e gli asset funzionano anche sotto `/WebApp-DCS/`. In locale la base resta `/`. Per riprodurre la build e i test del sito:
+
+```sh
+VITE_BASE_PATH=/WebApp-DCS/ npm run build
+VITE_BASE_PATH=/WebApp-DCS/ npm test
+```
+
+La disponibilità di Pages per un repository privato dipende dal piano GitHub. Il sito può essere pubblico anche se il repository è privato; la pubblicazione comprende il PDF di riferimento. Questa configurazione prepara il deploy ma il sito diventa disponibile solo dopo l’attivazione e l’esecuzione su GitHub.
+
 ## Fonte e scelte editoriali
 
 Fonte fornita dall’utente: **JATF-OM-R04_Short.pdf**, sezione 10, revisione 04, pagine originali 114–131. Il file è conservato in `public/reference`; copyright Joint Air Task Force come riportato nel PDF. Ogni scheda in `src/data.ts` indica sezione e pagine originali, più il tipo (esempio o modello). Le note in italiano sono sintesi editoriali; le chiamate vengono dagli esempi o modelli del documento. Frequenze, piste, quote, callsign e codici sono dati degli esempi, non configurazione della missione.

@@ -31,7 +31,7 @@ import {
 } from "./data";
 
 type View = "library" | "favorites" | "training" | "guide";
-const source = "/reference/JATF-OM-R04_Short.pdf";
+const source = `${import.meta.env.BASE_URL}reference/JATF-OM-R04_Short.pdf`;
 const favoriteKey = "dcs-comms-favorites-v1";
 const titles: Record<View, string> = {
   library: "Comunicazioni radio",
