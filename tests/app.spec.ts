@@ -342,3 +342,106 @@ test("partenza: filtri per ente e VFR, preferiti della lezione persistenti", asy
     `${process.env.VITE_BASE_PATH || "/"}reference/Lezione-13-ott-2026.pdf#page=1`,
   );
 });
+
+test("volo personalizzato: sei chiamate con aeroporto e callsign, fino al readback Departure", async ({
+  page,
+}, testInfo) => {
+  await navigate(page, "Volo personalizzato");
+  await page
+    .getByLabel("Nome Aeroporto", { exact: true })
+    .fill(" Ramat David ");
+  await page.getByLabel("Nome Volo", { exact: true }).fill(" Viper 1-1 ");
+  await page.getByRole("button", { name: "Apri le comunicazioni" }).click();
+  const steps = page.locator(".personalized-step");
+  await expect(steps).toHaveCount(6);
+  await expect(steps.first().locator(".exchange.pilot p")).toHaveText(
+    "Ramat David Ground, Viper 1-1, radio check",
+  );
+  await expect(steps.first().locator(".exchange.controller p")).toHaveText(
+    "Viper 1-1, Ramat David Ground, read you 5 by 5",
+  );
+  for (let index = 1; index < 6; index++)
+    await steps.nth(index).locator("summary").click();
+  await expect(steps.nth(1).locator(".exchange.pilot p")).toHaveText(
+    "Ramat David Ground, Viper 1-1, request startup and November departure",
+  );
+  await expect(steps.nth(2).locator(".exchange.controller p")).toHaveText(
+    "Viper 1-1, Ramat David Ground, cleared to holding point Echo via Echo, runway 27",
+  );
+  await expect(steps.nth(3).locator(".exchange.controller p")).toHaveText(
+    "Viper 1-1, Ramat David Ground, push Ramat David Tower on 261.50",
+  );
+  await expect(steps.nth(4).locator(".exchange.pilot p")).toHaveText(
+    "Ramat David Tower, Viper 1-1, holding short Echo, runway 27, ready for departure",
+  );
+  await expect(steps.last().locator(".exchange.controller p")).toHaveText(
+    "Viper 1-1, Ramat David Tower, push Ramat David Departure 262.50",
+  );
+  await expect(steps.last().locator(".exchange.readback p")).toHaveText(
+    "Push 262.50, Viper 1-1",
+  );
+  await expect(steps.last().locator(".detail-source")).toHaveAttribute(
+    "href",
+    `${process.env.VITE_BASE_PATH || "/"}reference/Lezione-13-ott-2026.pdf#page=2`,
+  );
+  expect(
+    (
+      await page.locator(".personalized-step .exchange p").allTextContents()
+    ).join(" "),
+  ).not.toMatch(/\b(FL|GND|TWR)\b/);
+  await expect(
+    page.getByText("Primo contatto con Departure", { exact: true }),
+  ).toHaveCount(0);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.locator(".flight-summary").scrollIntoViewIfNeeded();
+  await page.screenshot({
+    path: `/workspace/artifacts/volo-personalizzato-${testInfo.project.name}.png`,
+  });
+  await navigate(page, "Partenza");
+  await page
+    .getByRole("button", {
+      name: "Apri Controllo radio con Ground",
+      exact: true,
+    })
+    .click();
+  await expect(page.locator(".exchange.pilot p")).toHaveText(
+    "GND, FL, radio check",
+  );
+});
+
+test("volo personalizzato: nomi obbligatori, modifica annullabile e testo letterale", async ({
+  page,
+}) => {
+  await navigate(page, "Volo personalizzato");
+  await page.getByRole("button", { name: "Apri le comunicazioni" }).click();
+  await expect(page.locator(".personalized-flight")).toHaveCount(0);
+  await page.getByLabel("Nome Aeroporto", { exact: true }).fill("   ");
+  await page.getByLabel("Nome Volo", { exact: true }).fill("Viper 1-1");
+  await page.getByRole("button", { name: "Apri le comunicazioni" }).click();
+  await expect(page.locator(".personalized-flight")).toHaveCount(0);
+  await page.getByLabel("Nome Aeroporto", { exact: true }).fill("Ramat David");
+  await page.getByRole("button", { name: "Apri le comunicazioni" }).click();
+  await page.getByRole("button", { name: "Modifica nomi" }).click();
+  await page.getByLabel("Nome Aeroporto", { exact: true }).fill("Annullato");
+  await page.getByRole("button", { name: "Annulla", exact: true }).click();
+  await expect(
+    page.locator(".personalized-step").first().locator(".exchange.pilot p"),
+  ).toHaveText("Ramat David Ground, Viper 1-1, radio check");
+  await page.getByRole("button", { name: "Modifica nomi" }).click();
+  await expect(page.getByLabel("Nome Aeroporto", { exact: true })).toHaveValue(
+    "Ramat David",
+  );
+  await page
+    .getByLabel("Nome Aeroporto", { exact: true })
+    .fill("FL Tower $& <b>");
+  await page.getByLabel("Nome Volo", { exact: true }).fill("GND 1-1");
+  await page.getByRole("button", { name: "Aggiorna comunicazioni" }).click();
+  await expect(
+    page.locator(".personalized-step").first().locator(".exchange.pilot p"),
+  ).toHaveText("FL Tower $& <b> Ground, GND 1-1, radio check");
+  await expect(page.locator(".personalized-step b")).toHaveCount(0);
+});

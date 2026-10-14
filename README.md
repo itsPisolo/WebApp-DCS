@@ -48,6 +48,12 @@ Le sei schede della lezione vengono da **Lezione - 13 ott 2026 (1).pdf**, conser
 
 Negli appunti GND, TWR e FL sono segnaposto. Pista 27, frequenze, 3000 ft e squawk appartengono all’esercizio. `2977` è normalizzato in **altimeter 29.77 inHg**, anziché QNH 2977. Meteo e vento non specificati restano campi da compilare. La taxiway **via Echo** è stata aggiunta all’istruzione Ground su precisazione dell’autore, in coerenza con il readback. La frase combinata di allineamento/decollo è normalizzata; l’app ricorda che `line up and wait` da solo non autorizza il decollo. Il Viper check è interno alla formazione.
 
+## Volo personalizzato
+
+La voce **Volo personalizzato** apre una sezione dedicata: inserisci **Nome Aeroporto** (es. Ramat David) e **Nome Volo** (es. Viper 1-1), poi apri le comunicazioni. Le sei chiamate della lezione coprono radio check, avviamento, taxi, punto attesa/cambio Tower, decollo e November outbound/cambio Departure. Il percorso termina al readback della frequenza Departure, senza includere il modello di primo contatto IFR.
+
+I nomi sostituiscono i segnaposto nelle chiamate e nei readback: GND → Ramat David Ground, TWR/Tower → Ramat David Tower, Departure → Ramat David Departure, FL → Viper 1-1. I termini generici come “ready for departure” e gli altri dati dell’esercizio restano invariati. **Modifica nomi** aggiorna l’intera sequenza; **Annulla** conserva i nomi precedenti. La configurazione vale durante l’apertura della sezione: riaprendola vengono nuovamente richiesti i nomi.
+
 ## Fonte e scelte editoriali
 
 Fonte fornita dall’utente: **JATF-OM-R04_Short.pdf**, sezione 10, revisione 04, pagine originali 114–131. Il file è conservato in `public/reference`; copyright Joint Air Task Force come riportato nel PDF. Ogni scheda in `src/data.ts` indica sezione e pagine originali, più il tipo (esempio o modello). Le note in italiano sono sintesi editoriali; le chiamate vengono dagli esempi o modelli del documento. Frequenze, piste, quote, callsign e codici sono dati degli esempi, non configurazione della missione.

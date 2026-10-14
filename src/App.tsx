@@ -1,3 +1,4 @@
+import PersonalizedDeparture from "./PersonalizedDeparture";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowDownLeft,
@@ -32,12 +33,19 @@ import {
   type Scenario,
 } from "./data";
 
-type View = "departure" | "library" | "favorites" | "training" | "guide";
+type View =
+  | "personalized"
+  | "departure"
+  | "library"
+  | "favorites"
+  | "training"
+  | "guide";
 const source = `${import.meta.env.BASE_URL}reference/JATF-OM-R04_Short.pdf`;
 const lessonSource = `${import.meta.env.BASE_URL}reference/Lezione-13-ott-2026.pdf`;
 const allScenarios = [...scenarios, ...departureScenarios];
 const favoriteKey = "dcs-comms-favorites-v1";
 const titles: Record<View, string> = {
+  personalized: "La tua partenza",
   departure: "Da Ground a Departure",
   library: "Comunicazioni radio",
   favorites: "Le tue comunicazioni",
@@ -202,6 +210,13 @@ export default function App() {
         <div className="sidebar-section">IL TUO SPAZIO</div>
         <nav className="primary-nav">
           <button
+            aria-current={view === "personalized" ? "page" : undefined}
+            className={view === "personalized" ? "active" : ""}
+            onClick={() => navigate("personalized")}
+          >
+            <Radio size={19} /> Volo personalizzato
+          </button>
+          <button
             aria-current={view === "departure" ? "page" : undefined}
             className={view === "departure" ? "active" : ""}
             onClick={() => navigate("departure")}
@@ -245,7 +260,8 @@ export default function App() {
               aria-pressed={entity === item.id && view !== "guide"}
               onClick={() => {
                 setEntity(entity === item.id ? "all" : item.id);
-                if (view === "guide") setView("library");
+                if (view === "guide" || view === "personalized")
+                  setView("library");
                 setMobileMenu(false);
                 setMobileDetail(false);
               }}
@@ -308,17 +324,25 @@ export default function App() {
                     ? "Preferiti"
                     : view === "departure"
                       ? "Partenza"
-                      : "Biblioteca"}
+                      : view === "personalized"
+                        ? "Volo personalizzato"
+                        : "Biblioteca"}
             </strong>
           </div>
           <a
             className="source-pill"
-            href={view === "departure" ? lessonSource : source}
+            href={
+              view === "departure" || view === "personalized"
+                ? lessonSource
+                : source
+            }
             target="_blank"
             rel="noreferrer"
           >
             <span className="status-dot" />{" "}
-            {view === "departure" ? "Lezione · 13 ott" : "JATF · Rev. 04"}{" "}
+            {view === "departure" || view === "personalized"
+              ? "Lezione · 13 ott"
+              : "JATF · Rev. 04"}{" "}
             <ArrowUpRight size={13} />
           </a>
         </header>
@@ -339,7 +363,9 @@ export default function App() {
                       ? "Le basi di una chiamata chiara, breve e corretta."
                       : view === "departure"
                         ? "Una chiamata alla volta: preparazione con Ground, decollo con Tower, poi trasferimento a Departure."
-                        : "Dall’avviamento all’atterraggio. Trova la chiamata giusta e preparati al prossimo volo."}
+                        : view === "personalized"
+                          ? "Il tuo aeroporto, il tuo callsign. Le chiamate Ground e Tower pronte per il tuo volo."
+                          : "Dall’avviamento all’atterraggio. Trova la chiamata giusta e preparati al prossimo volo."}
               </p>
               <div className="hero-meta">
                 <span>
@@ -351,7 +377,9 @@ export default function App() {
                     ? "Principi e readback"
                     : view === "departure"
                       ? "Lezione 13 ottobre 2026 · 3 enti"
-                      : `${catalog.length} schede · ${entities.length} enti`}
+                      : view === "personalized"
+                        ? "6 chiamate · fino al trasferimento a Departure"
+                        : `${catalog.length} schede · ${entities.length} enti`}
                 </span>
               </div>
             </div>
@@ -376,6 +404,8 @@ export default function App() {
           )}
           {view === "guide" ? (
             <Guide />
+          ) : view === "personalized" ? (
+            <PersonalizedDeparture />
           ) : (
             <>
               {view === "departure" && (

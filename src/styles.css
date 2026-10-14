@@ -2003,3 +2003,162 @@ h1 {
     padding: 16px;
   }
 }
+
+.flight-setup {
+  max-width: 660px;
+  padding: 30px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.flight-setup-icon {
+  color: var(--lime);
+  margin-bottom: 18px;
+}
+.flight-setup h2,
+.flight-summary h2 {
+  font-family: Manrope, system-ui, sans-serif;
+  font-size: 24px;
+  margin-bottom: 10px;
+  overflow-wrap: anywhere;
+}
+.flight-setup > p,
+.flight-summary p,
+.personalized-context {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+.flight-setup form {
+  display: grid;
+  margin-top: 26px;
+}
+.flight-setup label {
+  font-weight: 600;
+  margin-bottom: 9px;
+}
+.flight-setup input {
+  width: 100%;
+  min-width: 0;
+  padding: 13px 15px;
+  background: var(--canvas);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  font-size: 16px;
+}
+.flight-setup input::placeholder {
+  color: var(--muted);
+}
+.flight-setup small {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.8;
+  margin: 8px 0 24px;
+  overflow-wrap: anywhere;
+}
+.flight-setup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.flight-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 24px;
+  background: var(--selected);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.flight-summary > div {
+  min-width: 0;
+}
+.flight-summary > button {
+  flex-shrink: 0;
+}
+.personalized-sequence {
+  display: grid;
+  gap: 14px;
+  margin-top: 24px;
+}
+.personalized-step {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+.personalized-step[open] {
+  border-color: var(--lime);
+}
+.personalized-step summary {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 22px;
+  cursor: pointer;
+  list-style: none;
+  border-radius: 10px;
+}
+.personalized-step summary::-webkit-details-marker {
+  display: none;
+}
+.personalized-step summary:focus-visible {
+  outline: 3px solid var(--lime);
+  outline-offset: 4px;
+}
+.personalized-step summary:hover {
+  background: var(--surface-hover);
+}
+.personalized-step summary > div {
+  min-width: 0;
+  flex: 1;
+}
+.personalized-step summary > svg {
+  color: var(--lime);
+}
+.personalized-step[open] summary > svg {
+  transform: rotate(90deg);
+}
+.personalized-step h3 {
+  font-size: 16px;
+  margin: 10px 0 6px;
+}
+.personalized-step summary p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+.personalized-step .entity-tag {
+  overflow-wrap: anywhere;
+}
+.personalized-step-content {
+  padding: 0 22px 22px;
+}
+.personalized-context {
+  margin: 0 0 18px;
+}
+@media (max-width: 640px) {
+  .flight-setup {
+    padding: 22px 18px;
+  }
+  .flight-summary {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 20px;
+  }
+  .personalized-step summary {
+    gap: 8px;
+    padding: 18px 14px;
+  }
+  .personalized-step-content {
+    padding: 0 14px 18px;
+  }
+  .personalized-step .stage-number {
+    margin-right: 0;
+  }
+  .primary-nav > button:last-child {
+    grid-column: 1 / -1;
+  }
+}
