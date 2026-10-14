@@ -1,6 +1,6 @@
 # DCS Comms
 
-Web app responsive per studiare le comunicazioni radio in DCS. Interfaccia in italiano, comunicazioni in inglese. Prima versione senza backend: 23 schede, ricerca nel testo delle chiamate, filtri combinati per ente/fase/procedura, preferiti persistenti nel browser, ripasso con soluzione e guida ai fondamenti radio.
+Web app responsive per studiare le comunicazioni radio in DCS. Interfaccia in italiano, comunicazioni in inglese. Tema scuro, senza backend: percorso di partenza dedicato e 23 schede nella biblioteca completa, ricerca nel testo delle chiamate, filtri combinati per ente/fase/procedura, preferiti persistenti nel browser, ripasso con soluzione e guida ai fondamenti radio.
 
 ## Sviluppo
 
@@ -12,7 +12,7 @@ npm --cache /workspace/.npm-cache ci
 npm run dev -- --port 5173 --strictPort
 ```
 
-Il server ascolta sulla porta 5173. Per verificarlo internamente: `curl --fail http://127.0.0.1:5173/`. La pagina deve mostrare il titolo “Comunicazioni radio” e 23 schede. I processi devono essere riavviati nei nuovi task.
+Il server ascolta sulla porta 5173. Per verificarlo internamente: `curl --fail http://127.0.0.1:5173/`. La pagina iniziale deve mostrare il titolo “Da Ground a Departure” e 7 schede nel percorso di partenza. La voce Biblioteca conserva le 23 schede del manuale. I processi devono essere riavviati nei nuovi task.
 
 ## Build e verifiche
 
@@ -36,6 +36,18 @@ VITE_BASE_PATH=/WebApp-DCS/ npm test
 
 La disponibilità di Pages per un repository privato dipende dal piano GitHub. Il sito può essere pubblico anche se il repository è privato; la pubblicazione comprende il PDF di riferimento. Questa configurazione prepara il deploy ma il sito diventa disponibile solo dopo l’attivazione e l’esecuzione su GitHub.
 
+## Percorso di partenza
+
+La pagina iniziale **Partenza** distingue l’ente con cui stai parlando, in ordine:
+
+1. **Ground**: radio check, avviamento, rullaggio, holding short e passaggio alla Tower.
+2. **Tower**: primo contatto al punto attesa, allineamento/decollo, November outbound e passaggio a Departure.
+3. **Departure**: modello IFR di primo contatto e salita, integrato dal manuale JATF.
+
+Le sei schede della lezione vengono da **Lezione - 13 ott 2026 (1).pdf**, conservato in `public/reference/Lezione-13-ott-2026.pdf`. I link delle schede portano alla pagina pertinente. Il documento termina al trasferimento a Departure e non contiene il successivo contatto VFR: il modello IFR è esplicitamente distinto e non va usato come seguito automatico della partenza November. I filtri VFR/IFR mantengono questa distinzione. I preferiti comprendono sia biblioteca sia lezione.
+
+Negli appunti GND, TWR e FL sono segnaposto. Pista 27, frequenze, 3000 ft e squawk appartengono all’esercizio. `2977` è normalizzato in **altimeter 29.77 inHg**, anziché QNH 2977. Meteo e vento non specificati restano campi da compilare. La taxiway **via Echo** è stata aggiunta all’istruzione Ground su precisazione dell’autore, in coerenza con il readback. La frase combinata di allineamento/decollo è normalizzata; l’app ricorda che `line up and wait` da solo non autorizza il decollo. Il Viper check è interno alla formazione.
+
 ## Fonte e scelte editoriali
 
 Fonte fornita dall’utente: **JATF-OM-R04_Short.pdf**, sezione 10, revisione 04, pagine originali 114–131. Il file è conservato in `public/reference`; copyright Joint Air Task Force come riportato nel PDF. Ogni scheda in `src/data.ts` indica sezione e pagine originali, più il tipo (esempio o modello). Le note in italiano sono sintesi editoriali; le chiamate vengono dagli esempi o modelli del documento. Frequenze, piste, quote, callsign e codici sono dati degli esempi, non configurazione della missione.
@@ -44,7 +56,7 @@ Fonte fornita dall’utente: **JATF-OM-R04_Short.pdf**, sezione 10, revisione 04
 - Il refuso `QHN` nell’esempio di pagina 119 è normalizzato in `QNH`.
 - I segnaposto italiani del modello IFR a pagina 120 sono tradotti in inglese. Non è aggiunta una risposta del controllore assente nel manuale.
 - Spaziatura e a capo delle chiamate sono normalizzati. La punteggiatura di “continue approach, report” è separata correttamente.
-- Departure organizza le chiamate della fase di uscita/salita; nell’originale l’ente può essere Tower o Approach. L’interlocutore effettivo resta nella chiamata.
+- Il riporto VFR outbound è classificato sotto Tower, che assegna il trasferimento. Departure organizza il primo contatto e la salita; nel manuale l’ente può essere Approach, come indicato nella scheda.
 - Le operazioni su portaerei (§ 10.4) non sono ancora catalogate. Il PDF integrale rimane consultabile.
 
 ## Limiti della prima versione

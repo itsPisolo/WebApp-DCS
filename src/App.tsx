@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowDownLeft,
   ArrowRight,
@@ -20,6 +20,8 @@ import {
   X,
 } from "lucide-react";
 import {
+  departureScenarios,
+  departureStages,
   entities,
   phases,
   scenarios,
@@ -30,10 +32,13 @@ import {
   type Scenario,
 } from "./data";
 
-type View = "library" | "favorites" | "training" | "guide";
+type View = "departure" | "library" | "favorites" | "training" | "guide";
 const source = `${import.meta.env.BASE_URL}reference/JATF-OM-R04_Short.pdf`;
+const lessonSource = `${import.meta.env.BASE_URL}reference/Lezione-13-ott-2026.pdf`;
+const allScenarios = [...scenarios, ...departureScenarios];
 const favoriteKey = "dcs-comms-favorites-v1";
 const titles: Record<View, string> = {
+  departure: "Da Ground a Departure",
   library: "Comunicazioni radio",
   favorites: "Le tue comunicazioni",
   training: "Un po’ di pratica. Molta sicurezza.",
@@ -58,7 +63,7 @@ function loadFavorites(): string[] {
     return Array.isArray(saved)
       ? saved.filter(
           (id): id is string =>
-            typeof id === "string" && scenarios.some((s) => s.id === id),
+            typeof id === "string" && allScenarios.some((s) => s.id === id),
         )
       : [];
   } catch {
@@ -67,12 +72,12 @@ function loadFavorites(): string[] {
 }
 
 export default function App() {
-  const [view, setView] = useState<View>("library");
+  const [view, setView] = useState<View>("departure");
   const [entity, setEntity] = useState<Entity | "all">("all");
   const [phase, setPhase] = useState<Phase | "all">("all");
   const [procedure, setProcedure] = useState("all");
   const [search, setSearch] = useState("");
-  const [selectedId, setSelectedId] = useState("radio-check");
+  const [selectedId, setSelectedId] = useState("lesson-radio");
   const [favorites, setFavorites] = useState(loadFavorites);
   const [storageError, setStorageError] = useState(false);
   const [revealed, setRevealed] = useState(false);
@@ -80,9 +85,15 @@ export default function App() {
   const [mobileDetail, setMobileDetail] = useState(false);
   const listScrollPosition = useRef(0);
 
+  const catalog =
+    view === "departure"
+      ? departureScenarios
+      : view === "favorites"
+        ? allScenarios
+        : scenarios;
   const filtered = useMemo(
     () =>
-      scenarios.filter(
+      catalog.filter(
         (s) =>
           (entity === "all" || s.entity === entity) &&
           (phase === "all" || s.phase === phase) &&
@@ -94,7 +105,7 @@ export default function App() {
             .toLocaleLowerCase("it")
             .includes(search.trim().toLocaleLowerCase("it")),
       ),
-    [entity, phase, procedure, view, favorites, search],
+    [catalog, entity, phase, procedure, view, favorites, search],
   );
   const selected = filtered.find((s) => s.id === selectedId) ?? filtered[0];
   const currentIndex = selected ? filtered.indexOf(selected) : -1;
@@ -104,7 +115,9 @@ export default function App() {
   }, [selected?.id, view]);
   useEffect(() => {
     if (mobileDetail && window.matchMedia("(max-width: 900px)").matches) {
-      document.querySelector(".detail-panel")?.scrollIntoView({ block: "start" });
+      document
+        .querySelector(".detail-panel")
+        ?.scrollIntoView({ block: "start" });
       document.getElementById("detail-title")?.focus({ preventScroll: true });
     }
   }, [mobileDetail, selected?.id]);
@@ -157,7 +170,9 @@ export default function App() {
     setMobileDetail(false);
     requestAnimationFrame(() => {
       window.scrollTo({ top: listScrollPosition.current });
-      document.getElementById(`scenario-${selected?.id}`)?.focus({ preventScroll: true });
+      document
+        .getElementById(`scenario-${selected?.id}`)
+        ?.focus({ preventScroll: true });
     });
   }
   const filteredActive =
@@ -186,6 +201,13 @@ export default function App() {
         </button>
         <div className="sidebar-section">IL TUO SPAZIO</div>
         <nav className="primary-nav">
+          <button
+            aria-current={view === "departure" ? "page" : undefined}
+            className={view === "departure" ? "active" : ""}
+            onClick={() => navigate("departure")}
+          >
+            <Plane size={19} /> Partenza
+          </button>
           <button
             aria-current={view === "library" ? "page" : undefined}
             className={view === "library" ? "active" : ""}
@@ -284,16 +306,19 @@ export default function App() {
                   ? "Allenamento"
                   : view === "favorites"
                     ? "Preferiti"
-                    : "Biblioteca"}
+                    : view === "departure"
+                      ? "Partenza"
+                      : "Biblioteca"}
             </strong>
           </div>
           <a
             className="source-pill"
-            href={source}
+            href={view === "departure" ? lessonSource : source}
             target="_blank"
             rel="noreferrer"
           >
-            <span className="status-dot" /> JATF · Rev. 04{" "}
+            <span className="status-dot" />{" "}
+            {view === "departure" ? "Lezione · 13 ott" : "JATF · Rev. 04"}{" "}
             <ArrowUpRight size={13} />
           </a>
         </header>
@@ -312,7 +337,9 @@ export default function App() {
                     ? "Le schede che vuoi avere sempre a portata di mano."
                     : view === "guide"
                       ? "Le basi di una chiamata chiara, breve e corretta."
-                      : "Dall’avviamento all’atterraggio. Trova la chiamata giusta e preparati al prossimo volo."}
+                      : view === "departure"
+                        ? "Una chiamata alla volta: preparazione con Ground, decollo con Tower, poi trasferimento a Departure."
+                        : "Dall’avviamento all’atterraggio. Trova la chiamata giusta e preparati al prossimo volo."}
               </p>
               <div className="hero-meta">
                 <span>
@@ -322,7 +349,9 @@ export default function App() {
                 <span>
                   {view === "guide"
                     ? "Principi e readback"
-                    : `${scenarios.length} schede · ${entities.length} enti`}
+                    : view === "departure"
+                      ? "Lezione 13 ottobre 2026 · 3 enti"
+                      : `${catalog.length} schede · ${entities.length} enti`}
                 </span>
               </div>
             </div>
@@ -349,6 +378,62 @@ export default function App() {
             <Guide />
           ) : (
             <>
+              {view === "departure" && (
+                <section
+                  className={`departure-path ${mobileDetail ? "mobile-hidden" : ""}`}
+                  aria-label="Percorso di partenza"
+                >
+                  <div className="departure-intro">
+                    <div>
+                      <h2>Ground → Tower → Departure</h2>
+                      <p>
+                        Prima ascolta l’ATIS · Ramat David 251.150 MHz
+                        nell’esercizio. Frequenze, pista, quote e squawk sono
+                        dati della lezione.
+                      </p>
+                    </div>
+                    <a
+                      className="outline-button"
+                      href={lessonSource}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <BookOpen size={16} /> Apri gli appunti
+                    </a>
+                  </div>
+                  <div
+                    className="departure-stages"
+                    role="group"
+                    aria-label="Ente nel percorso di partenza"
+                  >
+                    {departureStages.map((stage, index) => (
+                      <button
+                        key={stage.entity}
+                        aria-pressed={entity === stage.entity}
+                        className={entity === stage.entity ? "active" : ""}
+                        onClick={() => {
+                          setEntity(
+                            entity === stage.entity ? "all" : stage.entity,
+                          );
+                          setPhase("all");
+                          setMobileDetail(false);
+                        }}
+                      >
+                        <span className="stage-number">0{index + 1}</span>
+                        <strong>{stage.entity}</strong>
+                        <span>{stage.title}</span>
+                        <small>{stage.description}</small>
+                        <p>{stage.handoff}</p>
+                      </button>
+                    ))}
+                  </div>
+                  <p className="departure-note">
+                    Gli appunti coprono Ground e Tower fino al trasferimento a
+                    Departure. Il primo contatto Departure è un’integrazione IFR
+                    dal manuale, separata dal percorso VFR della lezione.
+                  </p>
+                </section>
+              )}
               <section
                 className={`search-controls ${mobileDetail ? "mobile-hidden" : ""}`}
                 aria-label="Ricerca e filtri"
@@ -429,7 +514,9 @@ export default function App() {
                   {view === "favorites"
                     ? "Le tue schede salvate"
                     : entity === "all"
-                      ? "Tutte le comunicazioni"
+                      ? view === "departure"
+                        ? "Sequenza di partenza"
+                        : "Tutte le comunicazioni"
                       : `${entity} · ${entities.find((e) => e.id === entity)?.description}`}{" "}
                   <span aria-live="polite">{filtered.length}</span>
                 </h2>
@@ -482,57 +569,75 @@ export default function App() {
                     aria-label="Schede di comunicazione"
                   >
                     {filtered.map((s, index) => (
-                      <article
-                        className={`scenario-card ${selected?.id === s.id ? "selected" : ""}`}
-                        key={s.id}
-                      >
-                        <button
-                          className="scenario-open"
-                          id={`scenario-${s.id}`}
-                          onClick={() => selectScenario(s)}
-                          aria-label={`Apri ${s.title}`}
-                          aria-current={
-                            selected?.id === s.id ? "true" : undefined
-                          }
+                      <Fragment key={s.id}>
+                        {view === "departure" &&
+                          (index === 0 ||
+                            filtered[index - 1].entity !== s.entity) && (
+                            <h3 className="sequence-heading">
+                              {s.entity}{" "}
+                              <span>
+                                {
+                                  departureStages.find(
+                                    (stage) => stage.entity === s.entity,
+                                  )?.title
+                                }
+                              </span>
+                            </h3>
+                          )}
+                        <article
+                          className={`scenario-card ${selected?.id === s.id ? "selected" : ""}`}
+                          key={s.id}
                         >
-                          <div className="card-top">
-                            <span
-                              className={`entity-tag ${s.entity.toLowerCase()}`}
-                            >
-                              <span />
-                              {s.entity.toUpperCase()}
-                            </span>
-                            <span className="card-number">
-                              {String(index + 1).padStart(2, "0")}
-                            </span>
-                          </div>
-                          <h3>{s.title}</h3>
-                          <p>{s.subtitle}</p>
-                          <div className="card-bottom">
-                            <span>{s.phase}</span>
-                            <span className="card-divider">·</span>
-                            <span>
-                              {s.procedure === "Tutte"
-                                ? "VFR / IFR"
-                                : s.procedure}
-                            </span>
-                            <ChevronRight size={16} />
-                          </div>
-                        </button>
-                        <button
-                          className={`card-star icon-button ${favorites.includes(s.id) ? "is-favorite" : ""}`}
-                          aria-label={`${favorites.includes(s.id) ? "Rimuovi dai" : "Aggiungi ai"} preferiti: ${s.title}`}
-                          aria-pressed={favorites.includes(s.id)}
-                          onClick={() => toggleFavorite(s.id)}
-                        >
-                          <Star
-                            size={17}
-                            fill={
-                              favorites.includes(s.id) ? "currentColor" : "none"
+                          <button
+                            className="scenario-open"
+                            id={`scenario-${s.id}`}
+                            onClick={() => selectScenario(s)}
+                            aria-label={`Apri ${s.title}`}
+                            aria-current={
+                              selected?.id === s.id ? "true" : undefined
                             }
-                          />
-                        </button>
-                      </article>
+                          >
+                            <div className="card-top">
+                              <span
+                                className={`entity-tag ${s.entity.toLowerCase()}`}
+                              >
+                                <span />
+                                {s.entity.toUpperCase()}
+                              </span>
+                              <span className="card-number">
+                                {String(index + 1).padStart(2, "0")}
+                              </span>
+                            </div>
+                            <h3>{s.title}</h3>
+                            <p>{s.subtitle}</p>
+                            <div className="card-bottom">
+                              <span>{s.phase}</span>
+                              <span className="card-divider">·</span>
+                              <span>
+                                {s.procedure === "Tutte"
+                                  ? "VFR / IFR"
+                                  : s.procedure}
+                              </span>
+                              <ChevronRight size={16} />
+                            </div>
+                          </button>
+                          <button
+                            className={`card-star icon-button ${favorites.includes(s.id) ? "is-favorite" : ""}`}
+                            aria-label={`${favorites.includes(s.id) ? "Rimuovi dai" : "Aggiungi ai"} preferiti: ${s.title}`}
+                            aria-pressed={favorites.includes(s.id)}
+                            onClick={() => toggleFavorite(s.id)}
+                          >
+                            <Star
+                              size={17}
+                              fill={
+                                favorites.includes(s.id)
+                                  ? "currentColor"
+                                  : "none"
+                              }
+                            />
+                          </button>
+                        </article>
+                      </Fragment>
                     ))}
                   </section>
 
@@ -572,7 +677,9 @@ export default function App() {
                             : "Salva scheda"}
                         </button>
                       </div>
-                      <h2 id="detail-title" tabIndex={-1}>{selected.title}</h2>
+                      <h2 id="detail-title" tabIndex={-1}>
+                        {selected.title}
+                      </h2>
                       <div className="detail-tags">
                         <span>{selected.phase}</span>
                         <span>
@@ -580,7 +687,11 @@ export default function App() {
                             ? "VFR / IFR"
                             : selected.procedure}
                         </span>
-                        <span>{selected.kind} del manuale</span>
+                        <span>
+                          {selected.source === "lesson"
+                            ? "Appunti della lezione"
+                            : `${selected.kind} del manuale`}
+                        </span>
                       </div>
                       <p className="scenario-note">{selected.note}</p>
                       {view === "training" && (
@@ -653,21 +764,26 @@ export default function App() {
                       )}
                       <a
                         className="detail-source"
-                        href={`${source}#page=${selected.pages[0] - 113}`}
+                        href={`${selected.source === "lesson" ? lessonSource : source}#page=${selected.source === "lesson" ? selected.pages[0] : selected.pages[0] - 113}`}
                         target="_blank"
                         rel="noreferrer"
                       >
                         <BookOpen size={16} />
                         <span>
-                          JATF-OM-R04 · § {selected.section}
+                          {selected.source === "lesson"
+                            ? "Lezione · 13 ottobre 2026"
+                            : `JATF-OM-R04 · § ${selected.section}`}
                           <small>
                             Pagina{selected.pages.length > 1 ? "e" : ""}{" "}
-                            {selected.pages.join("–")} del manuale
+                            {selected.pages.join("–")}{" "}
+                            {selected.source === "lesson"
+                              ? "degli appunti"
+                              : "del manuale"}
                           </small>
                         </span>
                         <ArrowUpRight size={16} />
                       </a>
-                      {view === "training" && (
+                      {(view === "training" || view === "departure") && (
                         <div className="training-navigation">
                           <button
                             className="outline-button"
@@ -700,10 +816,16 @@ export default function App() {
               )}
               <footer className="page-footer">
                 <span>
-                  <BookOpen size={14} /> Fraseologia tratta da JATF-OM-R04,
-                  sezione 10.
+                  <BookOpen size={14} />{" "}
+                  {view === "departure"
+                    ? "Appunti della lezione · 13 ottobre 2026 e integrazione JATF."
+                    : view === "favorites"
+                      ? "Fonti: manuale JATF e appunti della lezione."
+                      : "Fraseologia tratta da JATF-OM-R04, sezione 10."}
                 </span>
-                <span>Frequenze e valori sono esempi del manuale.</span>
+                <span>
+                  Frequenze e valori sono esempi da verificare nel briefing.
+                </span>
               </footer>
             </>
           )}

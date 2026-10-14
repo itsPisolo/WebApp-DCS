@@ -18,6 +18,7 @@ export type Scenario = {
   section: string;
   pages: number[];
   kind: "Esempio" | "Modello";
+  source?: "lesson";
   note: string;
   remember: string;
   exchanges: Exchange[];
@@ -203,7 +204,7 @@ export const scenarios: Scenario[] = [
     id: "vfr-departure",
     title: "Uscita VFR",
     subtitle: "Riporto al VRP e cambio di frequenza",
-    entity: "Departure",
+    entity: "Tower",
     phase: "Partenza",
     procedure: "VFR",
     section: "10.2.4",
@@ -211,7 +212,7 @@ export const scenarios: Scenario[] = [
     kind: "Esempio",
     note: "Riporta il punto di uscita autorizzato e la quota. Il manuale permette la chiamata circa 30 secondi prima del VRP.",
     remember:
-      "Departure è la categoria della fase: nell’esempio la chiamata è ancora diretta alla Tower, prima del trasferimento.",
+      "Il riporto outbound è ancora diretto alla Tower. Cambia frequenza solo dopo il trasferimento assegnato dal controllore.",
     exchanges: [
       {
         role: "pilot",
@@ -586,5 +587,183 @@ export const terms = [
     word: "UNABLE",
     meaning: "Non posso eseguire la richiesta.",
     note: "Di norma è seguito dal motivo. Comunica subito se non puoi seguire un’istruzione.",
+  },
+];
+
+// Lesson values describe this training example, never live mission settings.
+const lesson = (
+  scenario: Omit<Scenario, "source" | "section" | "kind">,
+): Scenario => ({
+  ...scenario,
+  source: "lesson",
+  section: "Lezione 13 ottobre 2026",
+  kind: "Esempio",
+});
+
+export const departureStages = [
+  {
+    entity: "Ground",
+    title: "Preparazione e rullaggio",
+    description: "Radio check → avviamento → taxi → punto attesa",
+    handoff: "Al punto attesa, ricevi e ripeti la frequenza Tower.",
+  },
+  {
+    entity: "Tower",
+    title: "Pista, decollo e uscita",
+    description: "Pronto alla partenza → decollo → November outbound",
+    handoff:
+      "Il riporto outbound resta alla Tower: attendi il trasferimento a Departure.",
+  },
+  {
+    entity: "Departure",
+    title: "Primo contatto e salita",
+    description: "Quota attuale → quota autorizzata → procedura assegnata",
+    handoff:
+      "Dopo il cambio di frequenza, presenta la situazione al nuovo ente.",
+  },
+] satisfies {
+  entity: Entity;
+  title: string;
+  description: string;
+  handoff: string;
+}[];
+
+export const departureScenarios: Scenario[] = [
+  lesson({
+    id: "lesson-radio",
+    title: "Controllo radio con Ground",
+    subtitle: "Prima dell’avviamento · verifica della leggibilità",
+    entity: "Ground",
+    phase: "Preparazione",
+    procedure: "VFR",
+    pages: [1],
+    note: "Ascolta prima l’ATIS se disponibile. Negli appunti Ramat David ATIS è 251.150 MHz. GND e FL sono segnaposto: usa il nome della stazione e il tuo callsign.",
+    remember:
+      "La risposta read you 5 by 5 indica una trasmissione perfettamente leggibile.",
+    exchanges: [
+      { role: "pilot", text: "GND, FL, radio check" },
+      { role: "controller", text: "FL, GND, read you 5 by 5" },
+    ],
+  }),
+  lesson({
+    id: "lesson-startup",
+    title: "Avviamento e uscita November",
+    subtitle: "Ground · autorizzazione, pista, altimeter e squawk",
+    entity: "Ground",
+    phase: "Preparazione",
+    procedure: "VFR",
+    pages: [1],
+    note: "Richiedi l’avviamento e l’uscita desiderata. Il riepilogo usa pista 27, November e squawk 5001 sequential. Meteo e vento non sono specificati numericamente negli appunti.",
+    remember:
+      "Gli appunti scrivono QNH 2977 nel readback: qui è normalizzato in altimeter 29.77 (inHg). Non usare 2977 come QNH in hPa. Pista, uscita e squawk vanno ripetuti.",
+    exchanges: [
+      {
+        role: "pilot",
+        text: "GND, FL, request startup and November departure",
+      },
+      {
+        role: "controller",
+        text: "FL, GND, startup and November departure approved, runway in use 27, altimeter 29.77, [weather and wind], squawk 5001 sequential",
+      },
+      {
+        role: "readback",
+        text: "Startup approved, runway 27, altimeter 29.77, cleared departure via November, squawk 5001 sequential, FL",
+      },
+    ],
+  }),
+  lesson({
+    id: "lesson-taxi",
+    title: "Rullaggio al punto attesa Echo",
+    subtitle: "Ground · tipo di velivolo, posizione e richiesta taxi",
+    entity: "Ground",
+    phase: "Preparazione",
+    procedure: "VFR",
+    pages: [1],
+    note: "Comunica 1 F-16 strike e la posizione apron south. Muoviti solo dopo l’autorizzazione al rullaggio.",
+    remember:
+      "Via Echo è riportato anche nell’autorizzazione Ground su precisazione dell’autore degli appunti. Ripeti punto attesa, taxiway e pista assegnati.",
+    exchanges: [
+      {
+        role: "pilot",
+        text: "GND, FL, 1 F-16 strike, apron south, ready for taxi",
+      },
+      {
+        role: "controller",
+        text: "FL, GND, cleared to holding point Echo via Echo, runway 27",
+      },
+      {
+        role: "readback",
+        text: "Cleared to holding point Echo via Echo, runway 27, FL",
+      },
+    ],
+  }),
+  lesson({
+    id: "lesson-holding",
+    title: "Punto attesa e passaggio alla Tower",
+    subtitle: "Ultima chiamata a Ground · holding short Echo",
+    entity: "Ground",
+    phase: "Partenza",
+    procedure: "VFR",
+    pages: [1],
+    note: "Raggiunto il punto attesa, riporta holding short Echo runway 27. Ground assegna Tower 261.50 MHz: ripeti la frequenza, poi cambia canale.",
+    remember:
+      "Il Viper check annotato dopo il cambio frequenza è una comunicazione interna alla formazione, non una chiamata ATC alla Tower. Il trasferimento non autorizza l’ingresso in pista.",
+    exchanges: [
+      { role: "pilot", text: "GND, FL, holding short Echo, runway 27" },
+      { role: "controller", text: "FL, GND, push Tower on 261.50" },
+      { role: "readback", text: "Push 261.50, FL" },
+    ],
+  }),
+  lesson({
+    id: "lesson-takeoff",
+    title: "Contatto Tower e decollo",
+    subtitle: "Tower · ready for departure dalla posizione di attesa",
+    entity: "Tower",
+    phase: "Partenza",
+    procedure: "VFR",
+    pages: [1],
+    note: "Alla nuova frequenza comunica posizione e ready for departure. Negli appunti la Tower dà un’autorizzazione combinata all’allineamento e al decollo; il testo inglese è normalizzato mantenendone il significato.",
+    remember:
+      "Line up and wait da solo non autorizza il decollo. Parti soltanto dopo cleared for takeoff e ripeti la pista. Le autorizzazioni possono arrivare separate: segui quella effettivamente ricevuta.",
+    exchanges: [
+      {
+        role: "pilot",
+        text: "TWR, FL, holding short Echo, runway 27, ready for departure",
+      },
+      {
+        role: "controller",
+        text: "FL, TWR, line up runway 27, cleared for takeoff runway 27",
+      },
+      {
+        role: "readback",
+        text: "Line up runway 27, cleared for takeoff runway 27, FL",
+      },
+    ],
+  }),
+  lesson({
+    id: "lesson-outbound",
+    title: "November outbound e passaggio a Departure",
+    subtitle: "Ultima chiamata alla Tower · punto di uscita e quota",
+    entity: "Tower",
+    phase: "Partenza",
+    procedure: "VFR",
+    pages: [2],
+    note: "Riporta November outbound e 3000 ft ancora alla Tower. Solo dopo l’istruzione push Departure 262.50 ripeti la frequenza e contatta il nuovo ente.",
+    remember:
+      "Outbound non significa che sei già su Departure. 262.50 MHz è la frequenza dell’esercizio, da confrontare con il briefing della missione. FL resta il segnaposto del callsign.",
+    exchanges: [
+      { role: "pilot", text: "TWR, FL, November outbound, 3000 feet" },
+      { role: "controller", text: "FL, TWR, push Departure 262.50" },
+      { role: "readback", text: "Push 262.50, FL" },
+    ],
+  }),
+  {
+    ...scenarios.find((s) => s.id === "if-departure")!,
+    id: "lesson-departure",
+    title: "Primo contatto con Departure",
+    subtitle: "Integrazione IFR dal manuale · quota e procedura di salita",
+    note: "Il riepilogo della lezione termina al cambio di frequenza e non fornisce una chiamata a Departure. Questo modello IFR viene dal manuale JATF (§ 10.2.5), dove l’ente di partenza è Approach. Usalo soltanto se la missione prevede una SID; non è il seguito VFR documentato dell’uscita November.",
+    remember:
+      "Usa il nome dell’ente assegnato (Departure o Approach), la quota attuale, quella autorizzata e la SID effettiva. Gli appunti non specificano il primo contatto VFR: non inventare una SID o un’autorizzazione di salita.",
   },
 ];

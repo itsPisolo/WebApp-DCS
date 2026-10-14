@@ -10,6 +10,7 @@ async function navigate(page: Page, label: string) {
 
 test.beforeEach(async ({ page }) => {
   await page.goto("./");
+  await navigate(page, "Biblioteca");
 });
 
 test("ricerca nel testo delle comms e collegamento alla fonte corretta", async ({
@@ -88,23 +89,59 @@ test("preferiti persistenti dopo ricaricamento e rimozione", async ({
   await expect(page.locator(".scenario-card")).toHaveCount(0);
 });
 
-test("filtro IFR: chiamate comuni incluse e scenari VFR esclusi", async ({ page }) => {
-  await page.getByRole("group", { name: "Procedura di volo" }).getByRole("button", { name: "IFR", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Apri Avviamento con ATIS", exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Apri Partenza IFR", exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Apri Uscita VFR", exact: true })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Apri Ingresso nel circuito", exact: true })).toHaveCount(0);
+test("filtro IFR: chiamate comuni incluse e scenari VFR esclusi", async ({
+  page,
+}) => {
+  await page
+    .getByRole("group", { name: "Procedura di volo" })
+    .getByRole("button", { name: "IFR", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Apri Avviamento con ATIS", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Apri Partenza IFR", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Apri Uscita VFR", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", {
+      name: "Apri Ingresso nel circuito",
+      exact: true,
+    }),
+  ).toHaveCount(0);
 });
 
-test("aprire una scheda in fondo alla lista e tornarci su schermi piccoli", async ({ page }) => {
-  await page.getByRole("button", { name: "Apri Rientro al parcheggio", exact: true }).click();
-  await expect(page.locator(".detail-panel > h2")).toHaveText("Rientro al parcheggio");
-  await expect(page.getByText("Taxi to apron L via H, L2, BEAR 2-1", { exact: true })).toBeVisible();
+test("aprire una scheda in fondo alla lista e tornarci su schermi piccoli", async ({
+  page,
+}) => {
+  await page
+    .getByRole("button", { name: "Apri Rientro al parcheggio", exact: true })
+    .click();
+  await expect(page.locator(".detail-panel > h2")).toHaveText(
+    "Rientro al parcheggio",
+  );
+  await expect(
+    page.getByText("Taxi to apron L via H, L2, BEAR 2-1", { exact: true }),
+  ).toBeVisible();
   if (page.viewportSize()!.width <= 900) {
     await expect(page.locator("#detail-title")).toBeInViewport();
-    await page.getByRole("button", { name: "Torna alle schede", exact: true }).click();
-    await expect(page.getByRole("button", { name: "Apri Rientro al parcheggio", exact: true })).toBeFocused();
-    await expect(page.getByRole("button", { name: "Apri Rientro al parcheggio", exact: true })).toBeInViewport();
+    await page
+      .getByRole("button", { name: "Torna alle schede", exact: true })
+      .click();
+    await expect(
+      page.getByRole("button", {
+        name: "Apri Rientro al parcheggio",
+        exact: true,
+      }),
+    ).toBeFocused();
+    await expect(
+      page.getByRole("button", {
+        name: "Apri Rientro al parcheggio",
+        exact: true,
+      }),
+    ).toBeInViewport();
   }
 });
 
@@ -182,4 +219,126 @@ test("layout adattivo, guida e PDF disponibili senza errori applicativi", async 
   expect(pdf.ok()).toBe(true);
   expect((await pdf.body()).subarray(0, 4).toString()).toBe("%PDF");
   expect(errors).toEqual([]);
+});
+
+test("partenza: sequenza Ground, Tower e Departure con fonti distinte", async ({
+  page,
+  request,
+}, testInfo) => {
+  await page.goto("./");
+  await expect(
+    page.getByRole("heading", { name: "Da Ground a Departure", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator(".scenario-card")).toHaveCount(7);
+  await page.screenshot({
+    path: `/workspace/artifacts/partenza-${testInfo.project.name}.png`,
+  });
+  const lesson = await request.get("reference/Lezione-13-ott-2026.pdf");
+  expect(lesson.ok()).toBe(true);
+  expect((await lesson.body()).subarray(0, 4).toString()).toBe("%PDF");
+  await page
+    .getByRole("button", {
+      name: "Apri Rullaggio al punto attesa Echo",
+      exact: true,
+    })
+    .click();
+  await expect(page.locator(".exchange.controller p")).toHaveText(
+    "FL, GND, cleared to holding point Echo via Echo, runway 27",
+  );
+  await expect(page.locator(".exchange.readback p")).toHaveText(
+    "Cleared to holding point Echo via Echo, runway 27, FL",
+  );
+  await page.getByRole("button", { name: "Successiva", exact: true }).click();
+  await expect(page.locator("#detail-title")).toHaveText(
+    "Punto attesa e passaggio alla Tower",
+  );
+  await expect(page.locator(".detail-heading .entity-tag")).toHaveText(
+    "GROUND",
+  );
+  await expect(page.locator(".exchange.readback p")).toHaveText(
+    "Push 261.50, FL",
+  );
+  await page.getByRole("button", { name: "Successiva", exact: true }).click();
+  await expect(page.locator(".detail-heading .entity-tag")).toHaveText("TOWER");
+  await page.getByRole("button", { name: "Successiva", exact: true }).click();
+  await expect(page.locator("#detail-title")).toHaveText(
+    "November outbound e passaggio a Departure",
+  );
+  await expect(page.locator(".detail-heading .entity-tag")).toHaveText("TOWER");
+  await expect(page.locator(".detail-source")).toHaveAttribute(
+    "href",
+    `${process.env.VITE_BASE_PATH || "/"}reference/Lezione-13-ott-2026.pdf#page=2`,
+  );
+  await expect(page.locator(".exchange.readback p")).toHaveText(
+    "Push 262.50, FL",
+  );
+  await page.getByRole("button", { name: "Successiva", exact: true }).click();
+  await expect(page.locator(".detail-heading .entity-tag")).toHaveText(
+    "DEPARTURE",
+  );
+  await expect(page.locator(".scenario-note")).toContainText(
+    "non è il seguito VFR documentato",
+  );
+  await expect(page.locator(".detail-source")).toHaveAttribute(
+    "href",
+    `${process.env.VITE_BASE_PATH || "/"}reference/JATF-OM-R04_Short.pdf#page=7`,
+  );
+  await expect(
+    page.getByRole("button", { name: "Successiva", exact: true }),
+  ).toBeDisabled();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+});
+
+test("partenza: filtri per ente e VFR, preferiti della lezione persistenti", async ({
+  page,
+}) => {
+  await page.goto("./");
+  const stages = page.getByRole("group", {
+    name: "Ente nel percorso di partenza",
+  });
+  await stages.getByRole("button", { name: /Ground/ }).click();
+  await expect(page.locator(".scenario-card")).toHaveCount(4);
+  await stages.getByRole("button", { name: /^02Tower/ }).click();
+  await expect(page.locator(".scenario-card")).toHaveCount(2);
+  await expect(
+    page.getByRole("button", {
+      name: "Apri November outbound e passaggio a Departure",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await stages.getByRole("button", { name: /^02Tower/ }).click();
+  await page
+    .getByRole("group", { name: "Procedura di volo" })
+    .getByRole("button", { name: "VFR", exact: true })
+    .click();
+  await expect(page.locator(".scenario-card")).toHaveCount(6);
+  await expect(
+    page.getByRole("button", {
+      name: "Apri Primo contatto con Departure",
+      exact: true,
+    }),
+  ).toHaveCount(0);
+  await page
+    .getByRole("button", {
+      name: "Aggiungi ai preferiti: Rullaggio al punto attesa Echo",
+      exact: true,
+    })
+    .click();
+  await page.reload();
+  await navigate(page, "Preferiti");
+  await expect(page.locator(".scenario-card")).toHaveCount(1);
+  await page
+    .getByRole("button", {
+      name: "Apri Rullaggio al punto attesa Echo",
+      exact: true,
+    })
+    .click();
+  await expect(page.locator(".detail-source")).toHaveAttribute(
+    "href",
+    `${process.env.VITE_BASE_PATH || "/"}reference/Lezione-13-ott-2026.pdf#page=1`,
+  );
 });
